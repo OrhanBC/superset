@@ -20,13 +20,16 @@
 import {
   isValidElement,
   ReactNode,
+  ReactElement,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
+  createContext,
 } from 'react';
+import React from 'react';
 import {
   ensureIsArray,
   t,
@@ -75,6 +78,47 @@ import { RunQueryButton } from './RunQueryButton';
 import { Operators } from '../constants';
 import { Clauses } from './controls/FilterControl/types';
 import StashFormDataContainer from './StashFormDataContainer';
+
+// Create a simple control context provider inline
+// This allows React control components to access control state and actions
+// Export it so plugins can use it
+export const ControlContext = createContext<{
+  controls: Record<string, ControlState>;
+  actions: ExploreActions;
+} | null>(null);
+
+export const ControlProvider = ({
+  children,
+  controls,
+  actions,
+}: {
+  children: ReactNode;
+  controls: Record<string, ControlState>;
+  actions: ExploreActions;
+}) => {
+  return (
+    <ControlContext.Provider value={{ controls, actions }}>
+      {children}
+    </ControlContext.Provider>
+  );
+};
+
+// Helper to clone React elements and inject control context props
+const enhanceReactControlElement = (
+  element: ReactElement,
+  controls: Record<string, ControlState>,
+  actions: ExploreActions,
+): ReactElement => {
+  // If the element is a control component that needs context, clone it with context
+  // For now, we'll use React.cloneElement to pass controls and actions as props
+  // Components can access these via props or use a hook to get from context
+  return React.cloneElement(element, {
+    // Pass controls and actions as props for components that need them
+    // Components using the ControlContext hook will get them from context
+    _controls: controls,
+    _actions: actions,
+  } as any);
+};
 
 const TABS_KEYS = {
   DATA: 'DATA',
@@ -656,8 +700,12 @@ export const ControlPanelsContainer = (props: ControlPanelsContainerProps) => {
                     return null;
                   }
                   if (isValidElement(controlItem)) {
-                    // When the item is a React element
-                    return controlItem;
+                    // When the item is a React element, enhance it with control context
+                    return enhanceReactControlElement(
+                      controlItem,
+                      controls,
+                      props.actions,
+                    );
                   }
                   if (
                     isCustomControlItem(controlItem) &&
@@ -851,8 +899,9 @@ export const ControlPanelsContainer = (props: ControlPanelsContainerProps) => {
 
   return (
     <>
-      <Styles ref={containerRef}>
-        <Tabs
+      <ControlProvider controls={props.controls} actions={props.actions}>
+        <Styles ref={containerRef}>
+          <Tabs
           id="controlSections"
           data-test="control-tabs"
           allowOverflow={false}
@@ -956,6 +1005,7 @@ export const ControlPanelsContainer = (props: ControlPanelsContainerProps) => {
           />
         </div>
       </Styles>
+      </ControlProvider>
       {ConfirmModal}
     </>
   );

@@ -16,11 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import React from 'react';
 import { t, validateNonEmpty } from '@superset-ui/core';
 import {
   ControlPanelConfig,
   getStandardizedControls,
 } from '@superset-ui/chart-controls';
+import {
+  RotationControl,
+  SizeFromControl,
+  SizeToControl,
+  ColorSchemeControl,
+} from './controls';
 
 const config: ControlPanelConfig = {
   controlPanelSections: [
@@ -40,48 +47,16 @@ const config: ControlPanelConfig = {
       expanded: true,
       controlSetRows: [
         [
-          {
-            name: 'size_from',
-            config: {
-              type: 'TextControl',
-              isInt: true,
-              label: t('Minimum Font Size'),
-              renderTrigger: true,
-              default: 10,
-              description: t('Font size for the smallest value in the list'),
-            },
-          },
-          {
-            name: 'size_to',
-            config: {
-              type: 'TextControl',
-              isInt: true,
-              label: t('Maximum Font Size'),
-              renderTrigger: true,
-              default: 70,
-              description: t('Font size for the biggest value in the list'),
-            },
-          },
+          // React component-based controls (modern approach)
+          // Using React.createElement since this is a .ts file, not .tsx
+          React.createElement(SizeFromControl),
+          React.createElement(SizeToControl),
         ],
         [
-          {
-            name: 'rotation',
-            config: {
-              type: 'SelectControl',
-              label: t('Word Rotation'),
-              choices: [
-                ['random', t('random')],
-                ['flat', t('flat')],
-                ['square', t('square')],
-              ],
-              renderTrigger: true,
-              default: 'square',
-              clearable: false,
-              description: t('Rotation to apply to words in the cloud'),
-            },
-          },
+          React.createElement(RotationControl),
         ],
-        ['color_scheme'],
+        // React component replacing string-based control
+        [React.createElement(ColorSchemeControl)],
       ],
     },
   ],
